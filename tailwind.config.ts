@@ -70,6 +70,15 @@ export default {
 					danger: 'hsl(var(--fire-danger))',
 					warning: 'hsl(var(--fire-warning))',
 					safe: 'hsl(var(--fire-safe))'
+				},
+				// Enhanced production colors
+				'production': {
+					'primary': '#3b82f6',
+					'secondary': '#64748b',
+					'success': '#10b981',
+					'warning': '#f59e0b',
+					'error': '#ef4444',
+					'info': '#06b6d4',
 				}
 			},
 			borderRadius: {

@@ -38,6 +38,41 @@ export class CORSProxyService {
       parseResponse: async (response: Response) => {
         return await response.text();
       }
+    },
+    {
+      name: 'cors-proxy',
+      url: (targetUrl: string) => `https://cors-proxy.org/?url=${encodeURIComponent(targetUrl)}`,
+      parseResponse: async (response: Response) => {
+        return await response.text();
+      }
+    },
+    {
+      name: 'cors-io',
+      url: (targetUrl: string) => `https://cors.io/?${encodeURIComponent(targetUrl)}`,
+      parseResponse: async (response: Response) => {
+        return await response.text();
+      }
+    },
+    {
+      name: 'cors-anywhere-alt',
+      url: (targetUrl: string) => `https://cors-anywhere.herokuapp.com/${targetUrl}`,
+      parseResponse: async (response: Response) => {
+        return await response.text();
+      },
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Origin': 'https://fireguard-ai.com'
+      }
+    },
+    {
+      name: 'proxy-cors',
+      url: (targetUrl: string) => `https://proxy.cors.sh/${targetUrl}`,
+      parseResponse: async (response: Response) => {
+        return await response.text();
+      },
+      headers: {
+        'x-requested-with': 'XMLHttpRequest'
+      }
     }
   ];
 
