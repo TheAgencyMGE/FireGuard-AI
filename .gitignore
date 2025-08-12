@@ -29,3 +29,8 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Large data files - exclude from git
+data/fire_nrt_*.csv
+data/wildfire.csv
+data/forestfiresagain.csv

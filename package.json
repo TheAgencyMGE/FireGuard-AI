@@ -4,7 +4,14 @@
   "version": "1.0.0",
   "description": "Advanced real-time wildfire monitoring and prediction system with ML-powered risk assessment",
   "type": "module",
-  "keywords": ["wildfire", "monitoring", "machine-learning", "satellite-data", "fire-prediction", "emergency-response"],
+  "keywords": [
+    "wildfire",
+    "monitoring",
+    "machine-learning",
+    "satellite-data",
+    "fire-prediction",
+    "emergency-response"
+  ],
   "author": "TheAgencyMGE",
   "license": "MIT",
   "repository": {

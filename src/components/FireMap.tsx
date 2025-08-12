@@ -42,7 +42,7 @@ export const FireMap: React.FC<FireMapProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || map.current) return;
 
     const mapboxToken = getMapboxToken();
     if (!mapboxToken) {
@@ -75,9 +75,12 @@ export const FireMap: React.FC<FireMapProps> = ({
       'top-right'
     );
 
-    // Load fire data and predictions for the selected state, then add to map
-    const loadFireData = async () => {
+    // Wait for map to load, then setup layers and load initial data
+    map.current.on('load', async () => {
+      if (!map.current) return;
+
       try {
+        // Load fire data and predictions for the selected state
         const [fires, predictions] = await Promise.all([
           fetchFireData(selectedState),
           generatePredictedFireLocations(selectedState)
@@ -90,254 +93,247 @@ export const FireMap: React.FC<FireMapProps> = ({
         if (onStateDataLoad) {
           onStateDataLoad(fires.length, predictions.length);
         }
-        
-        if ((fires.length > 0 || predictions.length > 0) && map.current) {
-          // Add fire points to map
-          map.current.on('load', () => {
-            if (!map.current) return;
-            
-            // Add existing fires data source
-            map.current.addSource('fires', {
-              type: 'geojson',
-              data: {
-                type: 'FeatureCollection',
-                features: fires.map(fire => ({
-                  type: 'Feature',
-                  geometry: {
-                    type: 'Point',
-                    coordinates: [fire.longitude, fire.latitude]
-                  },
-                  properties: {
-                    brightness: fire.brightness,
-                    confidence: fire.confidence,
-                    frp: fire.frp,
-                    satellite: fire.satellite,
-                    acq_date: fire.acq_date,
-                    acq_time: fire.acq_time,
-                    type: 'existing'
-                  }
-                }))
+
+        // Add existing fires data source
+        map.current.addSource('fires', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: fires.map(fire => ({
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [fire.longitude, fire.latitude]
+              },
+              properties: {
+                brightness: fire.brightness,
+                confidence: fire.confidence,
+                frp: fire.frp,
+                satellite: fire.satellite,
+                acq_date: fire.acq_date,
+                acq_time: fire.acq_time,
+                type: 'existing'
               }
-            });
+            }))
+          }
+        });
 
-            // Add predicted fires data source
-            map.current.addSource('predicted-fires', {
-              type: 'geojson',
-              data: {
-                type: 'FeatureCollection',
-                features: predictions.map(prediction => ({
-                  type: 'Feature',
-                  geometry: {
-                    type: 'Point',
-                    coordinates: [prediction.longitude, prediction.latitude]
-                  },
-                  properties: {
-                    riskLevel: prediction.riskLevel,
-                    predictedDate: prediction.predictedDate,
-                    probability: prediction.probability,
-                    confidence: prediction.confidence,
-                    type: 'predicted'
-                  }
-                }))
+        // Add predicted fires data source
+        map.current.addSource('predicted-fires', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: predictions.map(prediction => ({
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [prediction.longitude, prediction.latitude]
+              },
+              properties: {
+                riskLevel: prediction.riskLevel,
+                predictedDate: prediction.predictedDate,
+                probability: prediction.probability,
+                confidence: prediction.confidence,
+                type: 'predicted'
               }
-            });
+            }))
+          }
+        });
 
-            // Add existing fire points layer
-            map.current.addLayer({
-              id: 'fires',
-              type: 'circle',
-              source: 'fires',
-              paint: {
-                'circle-radius': [
-                  'interpolate',
-                  ['linear'],
-                  ['get', 'brightness'],
-                  300, 6,
-                  400, 10,
-                  500, 14
-                ],
-                'circle-color': [
-                  'interpolate',
-                  ['linear'],
-                  ['get', 'brightness'],
-                  300, '#ffeb3b',
-                  350, '#ff9800',
-                  400, '#f44336',
-                  500, '#d32f2f'
-                ],
-                'circle-opacity': 0.9,
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#ffffff'
-              }
-            });
+        // Add existing fire points layer
+        map.current.addLayer({
+          id: 'fires',
+          type: 'circle',
+          source: 'fires',
+          paint: {
+            'circle-radius': [
+              'interpolate',
+              ['linear'],
+              ['get', 'brightness'],
+              300, 6,
+              400, 10,
+              500, 14
+            ],
+            'circle-color': [
+              'interpolate',
+              ['linear'],
+              ['get', 'brightness'],
+              300, '#ffeb3b',
+              350, '#ff9800',
+              400, '#f44336',
+              500, '#d32f2f'
+            ],
+            'circle-opacity': 0.9,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
+          }
+        });
 
-            // Add predicted fire points layer
-            map.current.addLayer({
-              id: 'predicted-fires',
-              type: 'circle',
-              source: 'predicted-fires',
-              paint: {
-                'circle-radius': [
-                  'interpolate',
-                  ['linear'],
-                  ['get', 'riskLevel'],
-                  40, 8,
-                  60, 12,
-                  80, 16,
-                  100, 20
-                ],
-                'circle-color': [
-                  'interpolate',
-                  ['linear'],
-                  ['get', 'riskLevel'],
-                  40, '#ffd54f',
-                  60, '#ff8a65',
-                  80, '#e57373',
-                  100, '#f44336'
-                ],
-                'circle-opacity': 0.6,
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#ff4444',
-                'circle-stroke-opacity': 0.8
-              }
-            });
+        // Add predicted fire points layer
+        map.current.addLayer({
+          id: 'predicted-fires',
+          type: 'circle',
+          source: 'predicted-fires',
+          paint: {
+            'circle-radius': [
+              'interpolate',
+              ['linear'],
+              ['get', 'riskLevel'],
+              40, 8,
+              60, 12,
+              80, 16,
+              100, 20
+            ],
+            'circle-color': [
+              'interpolate',
+              ['linear'],
+              ['get', 'riskLevel'],
+              40, '#ffd54f',
+              60, '#ff8a65',
+              80, '#e57373',
+              100, '#f44336'
+            ],
+            'circle-opacity': 0.6,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ff4444',
+            'circle-stroke-opacity': 0.8
+          }
+        });
 
-            // Add heat map layer
-            map.current.addLayer({
-              id: 'fire-heat',
-              type: 'heatmap',
-              source: 'fires',
-              paint: {
-                'heatmap-weight': [
-                  'interpolate',
-                  ['linear'],
-                  ['get', 'brightness'],
-                  300, 0,
-                  500, 1
-                ],
-                'heatmap-intensity': [
-                  'interpolate',
-                  ['linear'],
-                  ['zoom'],
-                  0, 1,
-                  9, 3
-                ],
-                'heatmap-color': [
-                  'interpolate',
-                  ['linear'],
-                  ['heatmap-density'],
-                  0, 'rgba(33,102,172,0)',
-                  0.2, 'rgb(103,169,207)',
-                  0.4, 'rgb(209,229,240)',
-                  0.6, 'rgb(253,219,199)',
-                  0.8, 'rgb(239,138,98)',
-                  1, 'rgb(178,24,43)'
-                ],
-                'heatmap-radius': [
-                  'interpolate',
-                  ['linear'],
-                  ['zoom'],
-                  0, 2,
-                  9, 20
-                ]
-              }
-            });
+        // Add heat map layer
+        map.current.addLayer({
+          id: 'fire-heat',
+          type: 'heatmap',
+          source: 'fires',
+          paint: {
+            'heatmap-weight': [
+              'interpolate',
+              ['linear'],
+              ['get', 'brightness'],
+              300, 0,
+              500, 1
+            ],
+            'heatmap-intensity': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              0, 1,
+              9, 3
+            ],
+            'heatmap-color': [
+              'interpolate',
+              ['linear'],
+              ['heatmap-density'],
+              0, 'rgba(33,102,172,0)',
+              0.2, 'rgb(103,169,207)',
+              0.4, 'rgb(209,229,240)',
+              0.6, 'rgb(253,219,199)',
+              0.8, 'rgb(239,138,98)',
+              1, 'rgb(178,24,43)'
+            ],
+            'heatmap-radius': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              0, 2,
+              9, 20
+            ]
+          }
+        });
 
-            // Click event for existing fire points
-            map.current.on('click', 'fires', async (e) => {
-              if (!e.features || e.features.length === 0) return;
-              
-              const fire = e.features[0];
-              const coordinates = (fire.geometry as any).coordinates.slice();
-              const properties = fire.properties;
-              
-              // Get weather data and risk for this location
-              const weatherData = await fetchWeatherData(coordinates[1], coordinates[0]);
-              const riskData = await calculateFireRisk(coordinates[1], coordinates[0]);
-              
-              // Set the selected fire data
-              const fireWithLocation = {
-                ...properties,
-                latitude: coordinates[1],
-                longitude: coordinates[0]
-              } as FireData;
-              
-              setSelectedFire(fireWithLocation);
+        // Click event for existing fire points
+        map.current.on('click', 'fires', async (e) => {
+          if (!e.features || e.features.length === 0) return;
+          
+          const fire = e.features[0];
+          const coordinates = (fire.geometry as any).coordinates.slice();
+          const properties = fire.properties;
+          
+          // Get weather data and risk for this location
+          const weatherData = await fetchWeatherData(coordinates[1], coordinates[0]);
+          const riskData = await calculateFireRisk(coordinates[1], coordinates[0]);
+          
+          // Set the selected fire data
+          const fireWithLocation = {
+            ...properties,
+            latitude: coordinates[1],
+            longitude: coordinates[0]
+          } as FireData;
+          
+          setSelectedFire(fireWithLocation);
 
-              // Create popup
-              new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(`
-                  <div class="p-3 bg-card text-card-foreground rounded-lg border-l-4 border-red-500">
-                    <h3 class="font-bold text-sm mb-2">🔥 Active Fire</h3>
-                    <p class="text-xs"><strong>Brightness:</strong> ${properties.brightness}K</p>
-                    <p class="text-xs"><strong>Confidence:</strong> ${properties.confidence}</p>
-                    <p class="text-xs"><strong>Fire Power:</strong> ${properties.frp} MW</p>
-                    <p class="text-xs"><strong>Detected:</strong> ${properties.acq_date} ${properties.acq_time}</p>
-                    <p class="text-xs"><strong>Current Risk:</strong> ${riskData.riskLevel.toUpperCase()}</p>
-                  </div>
-                `)
-                .addTo(map.current!);
-            });
+          // Create popup
+          new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(`
+              <div class="p-3 bg-card text-card-foreground rounded-lg border-l-4 border-red-500">
+                <h3 class="font-bold text-sm mb-2">🔥 Active Fire</h3>
+                <p class="text-xs"><strong>Brightness:</strong> ${properties.brightness}K</p>
+                <p class="text-xs"><strong>Confidence:</strong> ${properties.confidence}</p>
+                <p class="text-xs"><strong>Fire Power:</strong> ${properties.frp} MW</p>
+                <p class="text-xs"><strong>Detected:</strong> ${properties.acq_date} ${properties.acq_time}</p>
+                <p class="text-xs"><strong>Current Risk:</strong> ${riskData.riskLevel.toUpperCase()}</p>
+              </div>
+            `)
+            .addTo(map.current!);
+        });
 
-            // Click event for predicted fire points
-            map.current.on('click', 'predicted-fires', (e) => {
-              if (!e.features || e.features.length === 0) return;
-              
-              const prediction = e.features[0];
-              const coordinates = (prediction.geometry as any).coordinates.slice();
-              const properties = prediction.properties;
-              
-              // Create popup for predictions
-              new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(`
-                  <div class="p-3 bg-card text-card-foreground rounded-lg border-l-4 border-orange-500">
-                    <h3 class="font-bold text-sm mb-2">⚠️ Fire Risk Prediction</h3>
-                    <p class="text-xs"><strong>Location:</strong> ${properties.location}</p>
-                    <p class="text-xs"><strong>Risk Level:</strong> ${Math.round(properties.riskLevel)}%</p>
-                    <p class="text-xs"><strong>Confidence:</strong> ${properties.confidence}%</p>
-                    <p class="text-xs"><strong>Predicted In:</strong> ${properties.predictedIn} hours</p>
-                    <p class="text-xs text-yellow-600 mt-1"><strong>⚠️ High risk conditions detected</strong></p>
-                  </div>
-                `)
-                .addTo(map.current!);
-            });
+        // Click event for predicted fire points
+        map.current.on('click', 'predicted-fires', (e) => {
+          if (!e.features || e.features.length === 0) return;
+          
+          const prediction = e.features[0];
+          const coordinates = (prediction.geometry as any).coordinates.slice();
+          const properties = prediction.properties;
+          
+          // Create popup for predictions
+          new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(`
+              <div class="p-3 bg-card text-card-foreground rounded-lg border-l-4 border-orange-500">
+                <h3 class="font-bold text-sm mb-2">⚠️ Fire Risk Prediction</h3>
+                <p class="text-xs"><strong>Location:</strong> ${properties.location || 'Unknown'}</p>
+                <p class="text-xs"><strong>Risk Level:</strong> ${Math.round(properties.riskLevel)}%</p>
+                <p class="text-xs"><strong>Confidence:</strong> ${properties.confidence}%</p>
+                <p class="text-xs"><strong>Predicted Date:</strong> ${properties.predictedDate}</p>
+                <p class="text-xs text-yellow-600 mt-1"><strong>⚠️ High risk conditions detected</strong></p>
+              </div>
+            `)
+            .addTo(map.current!);
+        });
 
-            // Change cursor on hover for both layers
-            ['fires', 'predicted-fires'].forEach(layerId => {
-              map.current!.on('mouseenter', layerId, () => {
-                if (map.current) {
-                  map.current.getCanvas().style.cursor = 'pointer';
-                }
-              });
-
-              map.current!.on('mouseleave', layerId, () => {
-                if (map.current) {
-                  map.current.getCanvas().style.cursor = '';
-                }
-              });
-            });
+        // Change cursor on hover for both layers
+        ['fires', 'predicted-fires'].forEach(layerId => {
+          map.current!.on('mouseenter', layerId, () => {
+            if (map.current) {
+              map.current.getCanvas().style.cursor = 'pointer';
+            }
           });
-        }
+
+          map.current!.on('mouseleave', layerId, () => {
+            if (map.current) {
+              map.current.getCanvas().style.cursor = '';
+            }
+          });
+        });
+
       } catch (error) {
         console.error('Error loading fire data:', error);
       } finally {
         setLoading(false);
       }
-    };
-
-    loadFireData();
+    });
 
     // Cleanup
     return () => {
       map.current?.remove();
+      map.current = null;
     };
   }, []);
 
   // Effect to reload data when state changes
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || !map.current.isStyleLoaded()) return;
 
     const reloadStateData = async () => {
       try {
@@ -368,8 +364,9 @@ export const FireMap: React.FC<FireMapProps> = ({
         }
 
         // Update map sources with new data
-        if (map.current.getSource('fires')) {
-          (map.current.getSource('fires') as mapboxgl.GeoJSONSource).setData({
+        const firesSource = map.current.getSource('fires') as mapboxgl.GeoJSONSource;
+        if (firesSource) {
+          firesSource.setData({
             type: 'FeatureCollection',
             features: fires.map(fire => ({
               type: 'Feature',
@@ -378,15 +375,21 @@ export const FireMap: React.FC<FireMapProps> = ({
                 coordinates: [fire.longitude, fire.latitude]
               },
               properties: {
-                ...fire,
-                type: 'active'
+                brightness: fire.brightness,
+                confidence: fire.confidence,
+                frp: fire.frp,
+                satellite: fire.satellite,
+                acq_date: fire.acq_date,
+                acq_time: fire.acq_time,
+                type: 'existing'
               }
             }))
           });
         }
 
-        if (map.current.getSource('predicted-fires')) {
-          (map.current.getSource('predicted-fires') as mapboxgl.GeoJSONSource).setData({
+        const predictedFiresSource = map.current.getSource('predicted-fires') as mapboxgl.GeoJSONSource;
+        if (predictedFiresSource) {
+          predictedFiresSource.setData({
             type: 'FeatureCollection',
             features: predictions.map(prediction => ({
               type: 'Feature',
@@ -412,8 +415,10 @@ export const FireMap: React.FC<FireMapProps> = ({
       }
     };
 
-    reloadStateData();
-  }, [selectedState, onStateDataLoad]);
+    // Add a small delay to ensure map has finished any ongoing transitions
+    const timeoutId = setTimeout(reloadStateData, 500);
+    return () => clearTimeout(timeoutId);
+  }, [selectedState]);
 
   return (
     <div className={`relative ${className}`}>

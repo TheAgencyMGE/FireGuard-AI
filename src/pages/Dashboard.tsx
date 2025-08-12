@@ -5,6 +5,7 @@ import { WebScraper } from '@/components/WebScraper';
 import { AlertSystem } from '@/components/AlertSystem';
 import { FireCameraFeed } from '@/components/FireCameraFeed';
 import { StateSelector } from '@/components/StateSelector';
+import { ForestServicePredictions } from '@/components/ForestServicePredictions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -245,8 +246,8 @@ const Dashboard = () => {
       </div>
 
       {/* Main Dashboard */}
-      <div className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="monitoring" className="space-y-6">
+      <div className="container mx-auto px-4 py-4">
+        <Tabs defaultValue="monitoring" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3 gap-1 bg-slate-800/50 p-1 rounded-lg">
             <TabsTrigger value="monitoring" className="flex items-center gap-2 data-[state=active]:bg-slate-700">
               <Activity className="h-4 w-4" />
@@ -262,7 +263,7 @@ const Dashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="monitoring" className="space-y-6">
+          <TabsContent value="monitoring" className="space-y-4">
             {/* Enhanced State Selector */}
             <StateSelector 
               selectedState={selectedState}
@@ -274,212 +275,205 @@ const Dashboard = () => {
                         predictedFires.some(p => p.riskLevel === 'medium') ? 'medium' : 'low'}
             />
 
-            <div className="grid grid-cols-12 gap-6">
-              {/* Enhanced Main Map */}
-              <div className="col-span-12 xl:col-span-9">
-                <Card className="h-[700px] p-0 overflow-hidden bg-slate-800/50 backdrop-blur-xl border-slate-700 shadow-2xl">
-                  <div className="h-full flex flex-col">
-                    <div className="p-4 border-b border-slate-700 bg-slate-800/50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Globe className="h-5 w-5 text-blue-400" />
-                          <h3 className="font-semibold text-white">Live Fire Intelligence Map</h3>
-                          <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                          {US_STATES.find(s => s.code === selectedState)?.name || 'Unknown State'}
-                        </Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
-                            {realFireCount} Real Incidents
-                          </Badge>
-                          <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-                            {activeFireCount} Total Detections
-                          </Badge>
-                        </div>
-                      </div>
+            {/* Horizontal Stats Bar */}
+            <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700 shadow-2xl">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-red-500/20 to-orange-500/20 rounded-lg border border-red-500/30">
+                    <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                      <Flame className="h-5 w-5 text-red-400" />
                     </div>
-                    <div className="flex-1">
-                      <FireMap 
-                        className="h-full" 
-                        selectedState={selectedState}
-                        onStateDataLoad={(fireCount, predictionCount) => {
-                          // Handle data load callback
-                        }}
-                      />
+                    <div>
+                      <p className="text-2xl font-bold text-white">{loading ? '...' : activeFireCount}</p>
+                      <p className="text-xs text-red-300">Active Fires</p>
                     </div>
                   </div>
-                </Card>
-              </div>
-
-              {/* Enhanced Right Sidebar */}
-              <div className="col-span-12 xl:col-span-3 space-y-6">
-                {/* Enhanced Quick Stats */}
-                <div className="grid grid-cols-2 xl:grid-cols-1 gap-4">
-                  <Card className="p-4 bg-gradient-to-br from-red-500/20 to-orange-500/20 backdrop-blur-xl border-red-500/30">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-                        <Flame className="h-5 w-5 text-red-400" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-white">{loading ? '...' : activeFireCount}</p>
-                        <p className="text-xs text-red-300">Active Fires</p>
-                      </div>
-                    </div>
-                  </Card>
                   
-                  <Card className="p-4 bg-gradient-to-br from-orange-500/20 to-yellow-500/20 backdrop-blur-xl border-orange-500/30">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
-                        <AlertTriangle className="h-5 w-5 text-orange-400" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-white">{loading ? '...' : highRiskAreas}</p>
-                        <p className="text-xs text-orange-300">High Risk Areas</p>
-                      </div>
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-lg border border-orange-500/30">
+                    <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                      <AlertTriangle className="h-5 w-5 text-orange-400" />
                     </div>
-                  </Card>
+                    <div>
+                      <p className="text-2xl font-bold text-white">{loading ? '...' : highRiskAreas}</p>
+                      <p className="text-xs text-orange-300">High Risk Areas</p>
+                    </div>
+                  </div>
                   
-                  <Card className="p-4 bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-xl border-green-500/30">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                        <Shield className="h-5 w-5 text-green-400" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-white">{loading ? '...' : predictionAccuracy}%</p>
-                        <p className="text-xs text-green-300">AI Accuracy</p>
-                      </div>
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg border border-green-500/30">
+                    <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                      <Shield className="h-5 w-5 text-green-400" />
                     </div>
-                  </Card>
+                    <div>
+                      <p className="text-2xl font-bold text-white">{loading ? '...' : predictionAccuracy}%</p>
+                      <p className="text-xs text-green-300">AI Accuracy</p>
+                    </div>
+                  </div>
                   
-                  <Card className="p-4 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-xl border-blue-500/30">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                        <Camera className="h-5 w-5 text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="text-2xl font-bold text-white">{loading ? '...' : cameraCount}</p>
-                        <p className="text-xs text-blue-300">Active Cameras</p>
-                      </div>
+                  <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-lg border border-blue-500/30">
+                    <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                      <Camera className="h-5 w-5 text-blue-400" />
                     </div>
-                  </Card>
+                    <div>
+                      <p className="text-2xl font-bold text-white">{loading ? '...' : cameraCount}</p>
+                      <p className="text-xs text-blue-300">Active Cameras</p>
+                    </div>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                {/* Enhanced Weather Widget */}
-                <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
-                      <Thermometer className="h-4 w-4 text-blue-400" />
-                      Weather Intelligence
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                <WeatherWidget 
-                  lat={US_STATES.find(s => s.code === selectedState)?.center.lat || 36.7783} 
-                  lon={US_STATES.find(s => s.code === selectedState)?.center.lng || -119.4179} 
-                  location={`${US_STATES.find(s => s.code === selectedState)?.name || 'California'} Central`}
-                />
-                  </CardContent>
-                </Card>
+            {/* Full Width Map */}
+            <Card className="h-[600px] p-0 overflow-hidden bg-slate-800/50 backdrop-blur-xl border-slate-700 shadow-2xl">
+              <div className="h-full flex flex-col">
+                <div className="p-4 border-b border-slate-700 bg-slate-800/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Globe className="h-5 w-5 text-blue-400" />
+                      <h3 className="font-semibold text-white">Live Fire Intelligence Map</h3>
+                      <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                        {US_STATES.find(s => s.code === selectedState)?.name || 'Unknown State'}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
+                        {realFireCount} Real Incidents
+                      </Badge>
+                      <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                        {activeFireCount} Total Detections
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <FireMap 
+                    className="h-full" 
+                    selectedState={selectedState}
+                    onStateDataLoad={(fireCount, predictionCount) => {
+                      // Handle data load callback
+                    }}
+                  />
+                </div>
+              </div>
+            </Card>
 
-                {/* Enhanced Alert System */}
-                <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
-                      <Bell className="h-4 w-4 text-red-400" />
-                      Emergency Alerts
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                <AlertSystem />
-                  </CardContent>
-                </Card>
+            {/* Horizontal Widget Bars */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Weather Intelligence */}
+              <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                    <Thermometer className="h-4 w-4 text-blue-400" />
+                    Weather Intelligence
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <WeatherWidget 
+                    lat={US_STATES.find(s => s.code === selectedState)?.center.lat || 36.7783} 
+                    lon={US_STATES.find(s => s.code === selectedState)?.center.lng || -119.4179} 
+                    location={`${US_STATES.find(s => s.code === selectedState)?.name || 'California'} Central`}
+                  />
+                </CardContent>
+              </Card>
 
-                {/* Data Sources Status */}
-                <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
-                      <Database className="h-4 w-4 text-green-400" />
-                      Data Sources
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {dataSources.slice(0, 5).map((source, index) => (
-                      <div key={index} className="flex items-center justify-between text-xs">
+              {/* Emergency Alerts */}
+              <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-red-400" />
+                    Emergency Alerts
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AlertSystem />
+                </CardContent>
+              </Card>
+
+              {/* Data Sources Status */}
+              <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                    <Database className="h-4 w-4 text-green-400" />
+                    Data Sources
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {dataSources.slice(0, 8).map((source, index) => (
+                    <div key={index} className="flex items-center justify-between text-xs">
+                      <div className="flex flex-col flex-1 min-w-0">
                         <span className="text-slate-300 truncate">{source.source}</span>
-                        <Badge 
-                          variant="outline" 
-                          className={`${
-                            source.status === 'active' 
-                              ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                              : 'bg-red-500/20 text-red-400 border-red-500/30'
-                          }`}
-                        >
-                          {source.status}
-                        </Badge>
+                        <span className="text-slate-500 text-xs">{source.recordCount} records</span>
                       </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
+                      <Badge 
+                        variant="outline" 
+                        className={`ml-2 ${
+                          source.status === 'active' 
+                            ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                            : 'bg-red-500/20 text-red-400 border-red-500/30'
+                        }`}
+                      >
+                        {source.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
 
-              {/* Enhanced Bottom Section */}
-              <div className="col-span-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {/* Enhanced Fire Camera Feeds */}
-                  <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
-                        <Camera className="h-4 w-4 text-blue-400" />
-                        Live Camera Feeds
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                    <FireCameraFeed selectedState={selectedState} />
-                    </CardContent>
-                  </Card>
+            {/* Bottom Horizontal Bar - Camera Feeds, News, Regional Weather */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Live Camera Feeds */}
+              <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                    <Camera className="h-4 w-4 text-blue-400" />
+                    Live Camera Feeds
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FireCameraFeed selectedState={selectedState} />
+                </CardContent>
+              </Card>
 
-                  {/* Enhanced Web Scraper */}
-                  <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
-                        <Search className="h-4 w-4 text-purple-400" />
-                        News Intelligence
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                    <WebScraper />
-                    </CardContent>
-                  </Card>
+              {/* News Intelligence */}
+              <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                    <Search className="h-4 w-4 text-purple-400" />
+                    News Intelligence
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <WebScraper />
+                </CardContent>
+              </Card>
 
-                  {/* Enhanced Regional Weather */}
-                  <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
-                        <Wind className="h-4 w-4 text-cyan-400" />
-                        Regional Weather
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {US_STATES.find(s => s.code === selectedState)?.regions.slice(0, 2).map((region, index) => (
-                          <div key={`${selectedState}-${index}`} className="text-sm">
-                            <WeatherWidget 
-                              lat={region.lat} 
-                              lon={region.lng} 
-                              location={`${region.name}, ${selectedState}`}
-                            />
-                          </div>
-                        )) || [
-                          <WeatherWidget 
-                            key="fallback"
-                            lat={36.7783} 
-                            lon={-119.4179} 
-                            location="California Central"
-                          />
-                        ]}
-                    </CardContent>
-                    </Card>
-                </div>
-              </div>
+              {/* Regional Weather */}
+              <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-white flex items-center gap-2">
+                    <Wind className="h-4 w-4 text-cyan-400" />
+                    Regional Weather
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {US_STATES.find(s => s.code === selectedState)?.regions.slice(0, 2).map((region, index) => (
+                    <div key={`${selectedState}-${index}`} className="text-sm">
+                      <WeatherWidget 
+                        lat={region.lat} 
+                        lon={region.lng} 
+                        location={`${region.name}, ${selectedState}`}
+                      />
+                    </div>
+                  )) || [
+                    <WeatherWidget 
+                      key="fallback"
+                      lat={36.7783} 
+                      lon={-119.4179} 
+                      location="California Central"
+                    />
+                  ]}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
@@ -574,21 +568,37 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="space-y-2">
-                    {dataSources.slice(0, 6).map((source, index) => (
+                    {dataSources.slice(0, 10).map((source, index) => (
                       <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                             source.status === 'active' ? 'bg-green-400' : 'bg-red-400'
                           }`}></div>
                           <span className="text-xs text-slate-300 truncate">{source.source}</span>
                         </div>
-                        <span className="text-xs text-slate-400">{source.recordCount}</span>
+                        <span className="text-xs text-slate-400 flex-shrink-0 ml-2">{source.recordCount}</span>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Forest Service Fire Behavior Analysis */}
+            <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Flame className="h-5 w-5 text-red-400" />
+                  Forest Service Fire Behavior Analysis
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  FARSITE and FlamMap enhanced predictions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ForestServicePredictions predictions={predictedFires} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
@@ -690,8 +700,8 @@ const Dashboard = () => {
       </div>
 
       {/* Enhanced Footer */}
-      <div className="border-t border-slate-700 bg-slate-800/30 backdrop-blur-xl mt-12">
-        <div className="container mx-auto px-4 py-6">
+      <div className="border-t border-slate-700 bg-slate-800/30 backdrop-blur-xl mt-6">
+        <div className="container mx-auto px-4 py-4">
           <div className="text-center">
             <p className="text-sm text-slate-400">
               FireGuard AI - Production-Ready Wildfire Intelligence System
